@@ -3,40 +3,45 @@
 #include <stdlib.h>
 #include <math.h>
 // Cada atributo destes struct, não podem possuir memorias lixo
-// O compilador vai setar multiplos de 4 bytes para cada atributo mesmo quando é desnecessario 
+// O compilador vai setar multiplos de 4 bytes para cada atributo mesmo quando é desnecessario
 #pragma pack(push, 1)
-typedef struct {
-    uint16_t type;            
-    uint32_t size;           
+typedef struct
+{
+    uint16_t type;
+    uint32_t size;
     uint16_t reserved1;
     uint16_t reserved2;
-    uint32_t offset;           
+    uint32_t offset;
 } BMPFileHeader;
 
-typedef struct {
-    uint32_t size;             
-    int32_t  width;           
-    int32_t  height;          
-    uint16_t planes;         
-    uint16_t bit_count;       
-    uint32_t compression;      
-    uint32_t size_image;       
-    int32_t  x_pixels_per_meter;
-    int32_t  y_pixels_per_meter;
-    uint32_t colors_used;     
+typedef struct
+{
+    uint32_t size;
+    int32_t width;
+    int32_t height;
+    uint16_t planes;
+    uint16_t bit_count;
+    uint32_t compression;
+    uint32_t size_image;
+    int32_t x_pixels_per_meter;
+    int32_t y_pixels_per_meter;
+    uint32_t colors_used;
     uint32_t colors_important;
 } BMPInfoHeader;
 
-typedef struct {
+typedef struct
+{
     uint8_t blue;
     uint8_t green;
     uint8_t red;
 } Pixel;
 #pragma pack(pop)
 
-int main() {
+int main()
+{
     FILE *file = fopen("./input.bmp", "rb"); // Abri um arquivo novo/existente com permisão de leitura de binarios
-    if (!file) {
+    if (!file)
+    {
         printf("Erro: Arquivo 'example.bmp' nao encontrado.\n");
         return 1;
     }
@@ -49,34 +54,36 @@ int main() {
     // Qual o tamanho do conteudo? o peso do tipo FileHeader
     // quantos items quero ler
     // Qual a origem do conteudo? o arquivo aberto "File"
-    fread(&fileHeader, sizeof(BMPFileHeader), 1, file); 
+    fread(&fileHeader, sizeof(BMPFileHeader), 1, file);
     fread(&infoHeader, sizeof(BMPInfoHeader), 1, file);
     // Curiosidade, na 1° leitura o file position indicator começa no 0
     // Quando a 1° leitura é finalizada. a 2° começa da position na frente. ex: se fosse um video de 4 minutos, e na 1° leitura fosse lida
     // até o minuto 2, a 2° leitura leria do minuto 2:01 adiente
 
     // Essa condicional é para saber se o tipo é igual a BM (BitMap)
-    if (fileHeader.type != 0x4D42) { // o atributo está em Hexadecimal e devido a arquitetura do processador está invertido.
+    if (fileHeader.type != 0x4D42)
+    { // o atributo está em Hexadecimal e devido a arquitetura do processador está invertido.
         printf("Erro: Nao e um arquivo BMP valido.\n");
         fclose(file);
         return 1;
     }
 
-    if (infoHeader.bit_count != 24) { // Condicional para saber se está 24 bit por pixel
+    if (infoHeader.bit_count != 24)
+    { // Condicional para saber se está 24 bit por pixel
         printf("Erro: Apenas BMPs de 24 bits sao suportados.\n");
         fclose(file);
         return 1;
     }
 
-  
-    int width = infoHeader.width; 
+    int width = infoHeader.width;
     int height = abs(infoHeader.height); // caso o height seje negativo, vira em positivo
 
     // O tamanho em byte de cada row da imagem deve ser divisivel por 4, esse calculo ver o padding faltando para cumprir o requisito
     int padding = (4 - (width * sizeof(Pixel)) % 4) % 4;
 
     Pixel *image = malloc(width * height * sizeof(Pixel)); // Alocação de memoria para a image
-    if (!image) {
+    if (!image)
+    {
         printf("Erro de memoria.\n");
         fclose(file);
         return 1;
@@ -89,8 +96,10 @@ int main() {
     fseek(file, fileHeader.offset, SEEK_SET);
 
     // vai copiar o input para settar nessa variavel image temporiariamente
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
             fread(&image[y * width + x], sizeof(Pixel), 1, file);
         }
         // Lembra do padding que foi adicionado a memoria do arquivo para ser divisivel por 4
@@ -102,19 +111,21 @@ int main() {
     fclose(file);
 
     // Aqui será invertido as cores do rgb, esse loop percorre a image temporiaria
-    for (int i = 0; i < width * height; i++) {
-        image[i].red   = 255 - image[i].red;
+    for (int i = 0; i < width * height; i++)
+    {
+        image[i].red = 255 - image[i].red;
         image[i].green = 255 - image[i].green;
-        image[i].blue  = 255 - image[i].blue;
+        image[i].blue = 255 - image[i].blue;
     }
 
-    fileHeader.offset = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader);  // Definição de onde dados começam
+    fileHeader.offset = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader);                // Definição de onde dados começam
     fileHeader.size = fileHeader.offset + (width * sizeof(Pixel) + padding) * height; // Definição do tamanho
-    infoHeader.size = sizeof(BMPInfoHeader);  // Definição do tamanho do header
-    infoHeader.compression = 0; // Garantia que o arquivo não está duplicado
+    infoHeader.size = sizeof(BMPInfoHeader);                                          // Definição do tamanho do header
+    infoHeader.compression = 0;                                                       // Garantia que o arquivo não está duplicado
 
     FILE *output = fopen("./output.bmp", "wb"); // É aberto um novo/existente arquivo com permisão de escrita binaria
-    if (!output) {
+    if (!output)
+    {
         printf("Erro ao criar output.bmp\n");
         free(image);
         return 1;
@@ -123,16 +134,19 @@ int main() {
     fwrite(&fileHeader, sizeof(BMPFileHeader), 1, output); // É escrito no arquivo o header nele
     fwrite(&infoHeader, sizeof(BMPInfoHeader), 1, output);
 
-    uint8_t paddingByte = 0; // Garantia que o tamanho da row em bytes da imagem vai ser divisivel por 4. 
+    uint8_t paddingByte = 0; // Garantia que o tamanho da row em bytes da imagem vai ser divisivel por 4.
     // e caso não for, o padding preenchera o restante com zeros
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          fwrite(&image[y * width + x], sizeof(Pixel), 1, output);
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            fwrite(&image[y * width + x], sizeof(Pixel), 1, output);
         }
 
         // Percorre o padding restante e vai preenchendo com zero
-        for (int k = 0; k < padding; k++) {
-          fwrite(&paddingByte, 1, 1, output);
+        for (int k = 0; k < padding; k++)
+        {
+            fwrite(&paddingByte, 1, 1, output);
         }
     }
 
