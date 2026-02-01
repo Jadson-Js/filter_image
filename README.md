@@ -8,6 +8,14 @@ Este projeto demonstra como manipular imagens a nível de bytes, lendo e escreve
 
 ---
 
+## 🎬 Demonstração
+
+<p align="center">
+  <img src="presentation.gif" alt="Demonstração do Filter Image" width="100%" />
+</p>
+
+---
+
 ## O Algoritmo de Inversão de Cores
 
 ### Fundamento Matemático
