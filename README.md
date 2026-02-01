@@ -1,124 +1,109 @@
-# 🎨 Filter Image - Inversor de Cores BMP
+# Filter Image - Inversão de Cores em Imagens BMP
 
-> *Transforme suas imagens em negativos artísticos com um toque de magia binária!*
+Um programa em C que aplica o filtro de inversão de cores (efeito negativo) em imagens no formato BMP de 24 bits.
 
-![C](https://img.shields.io/badge/Linguagem-C-blue?style=for-the-badge&logo=c)
-![BMP](https://img.shields.io/badge/Formato-BMP%2024bit-orange?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+## Introdução
 
-## 📖 O que é este projeto?
-
-Este é um programa escrito em **C puro** que pega uma imagem e faz algo mágico: **inverte todas as cores**! Sabe quando você olha o negativo de uma foto antiga de filme? É exatamente isso! O branco vira preto, o vermelho vira ciano, o azul vira amarelo... Uma verdadeira arte digital!
+Este projeto demonstra como manipular imagens a nível de bytes, lendo e escrevendo arquivos binários diretamente. O algoritmo implementado inverte as cores de cada pixel, produzindo um efeito similar ao negativo de fotografias analógicas.
 
 ---
 
-## 🧠 Como o algoritmo funciona?
+## O Algoritmo de Inversão de Cores
 
-### A Mágica por Trás da Inversão
+### Fundamento Matemático
 
-Imagine que cada cor na sua imagem é um número de **0 a 255**:
-- **0** = ausência total de cor (escuro)
-- **255** = intensidade máxima da cor (brilhante)
+Em imagens digitais, cada componente de cor (vermelho, verde e azul) é representado por um valor inteiro de 0 a 255. O zero representa ausência total daquela cor, enquanto 255 representa sua intensidade máxima.
 
-Para inverter uma cor, fazemos uma conta super simples:
+A inversão de uma cor é calculada subtraindo seu valor de 255:
 
 ```
-Nova Cor = 255 - Cor Original
+Cor Invertida = 255 - Cor Original
 ```
 
-**Exemplos práticos:**
-| Cor Original | Cálculo | Resultado |
-|-------------|---------|-----------|
-| Preto (0) | 255 - 0 = 255 | Branco |
-| Branco (255) | 255 - 255 = 0 | Preto |
-| Vermelho Puro (255, 0, 0) | (0, 255, 255) | Ciano |
-| Azul Puro (0, 0, 255) | (255, 255, 0) | Amarelo |
+Aplicando esta operação aos três canais de cor de cada pixel, obtemos o efeito de negativo.
+
+**Exemplos:**
+
+| Cor Original | Valores RGB | Cálculo | Resultado |
+|-------------|-------------|---------|-----------|
+| Preto | (0, 0, 0) | (255-0, 255-0, 255-0) | Branco (255, 255, 255) |
+| Branco | (255, 255, 255) | (255-255, 255-255, 255-255) | Preto (0, 0, 0) |
+| Vermelho | (255, 0, 0) | (255-255, 255-0, 255-0) | Ciano (0, 255, 255) |
+| Azul | (0, 0, 255) | (255-0, 255-0, 255-255) | Amarelo (255, 255, 0) |
 
 ---
 
-## 🖼️ Entendendo Imagens BMP
+## Estrutura do Formato BMP
 
-### O que é um arquivo BMP?
+### Visão Geral
 
-BMP (**BitMap**) é um dos formatos de imagem mais simples que existe! Diferente do JPG ou PNG, ele guarda a imagem quase sem compressão, o que o torna perfeito para aprender manipulação de imagens.
+O formato BMP (Bitmap) é um dos mais simples para armazenamento de imagens. Sua estrutura sem compressão o torna ideal para estudos de processamento de imagens.
 
-### A Anatomia de um BMP
-
-Um arquivo BMP é como um sanduíche de dados organizado em 3 camadas:
+Um arquivo BMP é dividido em três seções:
 
 ```
-┌─────────────────────────────────────┐
-│         📋 FILE HEADER              │  ← "Olá, sou um BMP!" (14 bytes)
-│   - Assinatura "BM"                 │
-│   - Tamanho total do arquivo        │
-│   - Onde os pixels começam          │
-├─────────────────────────────────────┤
-│         📐 INFO HEADER              │  ← Detalhes técnicos (40+ bytes)
-│   - Largura e altura da imagem      │
-│   - Bits por pixel (24 = colorido)  │
-│   - Compressão utilizada            │
-├─────────────────────────────────────┤
-│         🎨 PIXEL DATA               │  ← A imagem em si!
-│   - Cada pixel = 3 bytes (R, G, B)  │
-│   - Linhas com padding de 4 bytes   │
-└─────────────────────────────────────┘
++----------------------------------+
+|         FILE HEADER              |  14 bytes
+|   - Assinatura "BM" (0x4D42)     |
+|   - Tamanho total do arquivo     |
+|   - Offset para os dados         |
++----------------------------------+
+|         INFO HEADER              |  40 bytes (BITMAPINFOHEADER)
+|   - Dimensões da imagem          |
+|   - Bits por pixel               |
+|   - Tipo de compressão           |
++----------------------------------+
+|         DADOS DOS PIXELS         |  Variável
+|   - Pixels em formato BGR        |
+|   - Padding para alinhamento     |
++----------------------------------+
 ```
 
-### 🤔 Por que 24 bits?
+### Representação de Cores: 24 Bits por Pixel
 
-Cada pixel usa **24 bits** (3 bytes):
-- **8 bits** para Vermelho (Red)
-- **8 bits** para Verde (Green)  
-- **8 bits** para Azul (Blue)
+Neste formato, cada pixel ocupa 3 bytes (24 bits):
 
-Com 8 bits, cada cor pode ter **256 níveis** (0-255), resultando em:
+- 1 byte para o canal azul (Blue)
+- 1 byte para o canal verde (Green)
+- 1 byte para o canal vermelho (Red)
 
-```
-256 × 256 × 256 = 16.777.216 cores possíveis! 🌈
-```
+Nota: a ordem de armazenamento é BGR, não RGB. Esta é uma característica específica do formato BMP.
 
-### 📏 O Misterioso Padding
+Com 8 bits por canal, cada um pode assumir 256 valores distintos, totalizando 16.777.216 combinações de cores possíveis.
 
-Aqui vai um detalhe curioso: o formato BMP exige que **cada linha de pixels tenha um tamanho em bytes divisível por 4**!
+### Alinhamento de Linhas (Padding)
 
-Por quê? Por questões de eficiência de memória dos computadores antigos.
+O formato BMP exige que cada linha de pixels tenha um tamanho em bytes múltiplo de 4. Quando isso não ocorre naturalmente, bytes de preenchimento (padding) são adicionados ao final de cada linha.
 
-**Exemplo:** Se sua imagem tem largura de 5 pixels:
-- 5 pixels × 3 bytes = 15 bytes
-- 15 não é divisível por 4
-- Precisamos adicionar 1 byte de "enchimento" (padding)
-- 15 + 1 = 16 ✓ (divisível por 4!)
+O cálculo do padding é feito pela seguinte fórmula:
 
-O programa calcula isso automaticamente com a fórmula:
 ```c
-int padding = (4 - (width * 3) % 4) % 4;
+int padding = (4 - (largura * 3) % 4) % 4;
 ```
+
+Por exemplo, uma imagem com 5 pixels de largura:
+- 5 pixels × 3 bytes = 15 bytes por linha
+- 15 mod 4 = 3 (resta 3 para chegar em 16)
+- Padding necessário: 1 byte
 
 ---
 
-## 🔧 Como o código funciona?
+## Fluxo de Execução do Programa
 
-### Passo a Passo Simplificado
+O programa segue os seguintes passos:
 
-```
-1️⃣  Abre o arquivo de imagem (input.bmp)
-        ↓
-2️⃣  Lê os cabeçalhos (headers) do BMP
-        ↓
-3️⃣  Verifica se é um BMP válido de 24 bits
-        ↓
-4️⃣  Carrega todos os pixels na memória
-        ↓
-5️⃣  Para cada pixel: inverte as cores RGB
-        ↓
-6️⃣  Salva a imagem modificada (output.bmp)
-        ↓
-7️⃣  Libera a memória e celebra! 🎉
-```
+1. Abre o arquivo de entrada (`input.bmp`) em modo binário
+2. Lê e valida os headers do arquivo BMP
+3. Verifica se o arquivo possui 24 bits por pixel
+4. Aloca memória para armazenar todos os pixels
+5. Carrega os dados da imagem, respeitando o padding
+6. Aplica a inversão de cores em cada pixel
+7. Grava a imagem resultante em `output.bmp`
+8. Libera a memória alocada
 
-### A Inversão de Cores no Código
+### Implementação da Inversão
 
-Este é o coração do algoritmo:
+O trecho de código responsável pela inversão:
 
 ```c
 for (int i = 0; i < width * height; i++)
@@ -129,114 +114,82 @@ for (int i = 0; i < width * height; i++)
 }
 ```
 
-**O que está acontecendo:**
-1. Percorremos **todos** os pixels da imagem
-2. Para cada pixel, pegamos seu valor de vermelho, verde e azul
-3. Subtraímos de 255 para obter o valor invertido
-4. Guardamos o novo valor de volta
-
-É simples, elegante e **muito rápido**! ⚡
+O loop percorre linearmente todos os pixels da imagem (armazenados em um array unidimensional) e aplica a operação de inversão a cada canal de cor.
 
 ---
 
-## 🚀 Como executar
+## Detalhes Técnicos
 
-### Pré-requisitos
+### Empacotamento de Estruturas
 
-- GCC (Compilador C)
-- Uma imagem BMP de 24 bits chamada `input.bmp`
+O código utiliza `#pragma pack(push, 1)` para desabilitar o alinhamento automático de memória feito pelo compilador. Por padrão, o compilador insere bytes de padding entre os campos de uma struct para otimizar o acesso à memória.
 
-### Compilando e Executando
+No entanto, os headers do BMP têm tamanhos fixos e precisos: o File Header deve ter exatamente 14 bytes e o Info Header, 40 bytes. Qualquer byte adicional corromperia a leitura do arquivo.
+
+### Tratamento de Altura Negativa
+
+O campo `height` no Info Header pode ser negativo, indicando que a imagem está armazenada de cima para baixo (ao invés do padrão de baixo para cima). O programa utiliza `abs(height)` para tratar ambos os casos.
+
+---
+
+## Compilação e Execução
+
+### Requisitos
+
+- Compilador GCC
+- Arquivo `input.bmp` no formato BMP de 24 bits
+
+### Comandos
 
 ```bash
-# Clone o repositório
-git clone <url-do-repo>
-cd filter_image
-
-# Coloque sua imagem BMP como input.bmp na pasta
-
-# Execute com Make
+# Usando Make
 make run
 
-# Ou compile manualmente
+# Ou manualmente
 gcc main.c -o main && ./main
 ```
 
-### Resultado
-
-Se tudo der certo, você verá:
-```
-Sucesso! Verifique 'output.bmp'.
-```
-
-Sua imagem invertida estará em `output.bmp`! 🎨
+O programa gerará o arquivo `output.bmp` com a imagem invertida.
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 filter_image/
-├── main.c          # 🧠 Código fonte principal
-├── Makefile        # 🔨 Automação de compilação
-├── input.bmp       # 🖼️ Imagem de entrada
-├── output.bmp      # 🎨 Imagem processada (gerada)
-└── README.md       # 📖 Este arquivo!
+├── main.c          # Código fonte
+├── Makefile        # Automação de build
+├── input.bmp       # Imagem de entrada
+├── output.bmp      # Imagem processada
+└── README.md       # Documentação
 ```
 
 ---
 
-## 🎓 Conceitos Aprendidos
+## Conceitos Abordados
 
-Este projeto é excelente para aprender:
+Este projeto aborda os seguintes conceitos de programação em C:
 
-- ✅ **Manipulação de arquivos binários** em C
-- ✅ **Estruturas de dados** (`struct`) com empacotamento
-- ✅ **Alocação dinâmica de memória** (`malloc`/`free`)
-- ✅ **Formato de imagem BMP** e seus headers
-- ✅ **Aritmética de ponteiros** e arrays
-- ✅ **Processamento de imagens** básico
-
----
-
-## 💡 Dicas e Curiosidades
-
-### 🔍 O `#pragma pack(push, 1)`
-
-O compilador normalmente alinha dados na memória em múltiplos de 4 bytes para otimização. Mas os headers do BMP precisam de tamanhos **exatos**! O `#pragma pack(1)` força o compilador a usar exatamente o tamanho que definimos.
-
-### 🔄 Ordem invertida: BGR em vez de RGB
-
-Curiosidade: no formato BMP, os pixels são armazenados na ordem **Azul-Verde-Vermelho** (BGR), não RGB! Por isso a struct `Pixel` define `blue` primeiro.
-
-### ↕️ Imagens de cabeça para baixo?
-
-O BMP pode armazenar imagens de baixo para cima (height positivo) ou de cima para baixo (height negativo). Nosso código usa `abs(height)` para lidar com ambos!
+- Manipulação de arquivos binários (`fopen`, `fread`, `fwrite`, `fseek`)
+- Definição de estruturas com tamanhos precisos
+- Alocação dinâmica de memória
+- Aritmética com ponteiros e arrays
+- Processamento de dados binários
 
 ---
 
-## 🚧 Próximas Ideias
+## Extensões Possíveis
 
-Quer expandir este projeto? Algumas sugestões:
+O código pode ser expandido para implementar outros filtros:
 
-- [ ] 🖤 Filtro de escala de cinza
-- [ ] 🔆 Ajuste de brilho e contraste
-- [ ] 🌀 Efeito blur (desfoque)
-- [ ] 📐 Rotação de imagem
-- [ ] 🖼️ Suporte a outros formatos (PNG, JPG)
-
----
-
-## 📜 Licença
-
-Este projeto é livre para uso educacional. Divirta-se aprendendo! 🎉
+- Conversão para escala de cinza
+- Ajuste de brilho e contraste
+- Efeito de desfoque (blur)
+- Rotação e espelhamento
+- Suporte a outros formatos de imagem
 
 ---
 
-<div align="center">
+## Licença
 
-**Feito com ❤️ e bytes**
-
-*"Uma imagem vale mais que mil palavras, mas precisa de milhões de bytes!"*
-
-</div>
+Projeto disponível para uso educacional.
